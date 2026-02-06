@@ -4,25 +4,19 @@ import { authClient } from "@/auth-client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-
-type AuthError = {
-  message?: string
-}
-
 export default function SignupPage() {
-  const [email, setEmail] = useState<string>("")
-  const [password, setPassword] = useState<string>("")
-  const [loading, setLoading] = useState<boolean>(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
 
-
-  // ✅ simple + reliable email validation
-  const isValidEmail = (value: string): boolean =>
+  const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
-  const handleEmailSignup = async (): Promise<void> => {
+  // 📧 Email Signup
+  const handleEmailSignup = async () => {
     setError(null)
 
     if (!isValidEmail(email)) {
@@ -35,47 +29,42 @@ export default function SignupPage() {
       return
     }
 
-    try {
-      setLoading(true)
+    setLoading(true)
 
-      const result = await authClient.signUp.email({
+    try {
+      const { error } = await authClient.signUp.email({
         email,
         password,
         name: email.split("@")[0],
-       
-      },
-      
-    )
+      })
 
-      console.log("Signup success:", result)
+      if (error) {
+        setError(error.message || "Unable to create account")
+        return
+      }
 
-      // redirect to login page
-    } catch (err) {
-      const e = err as AuthError
-      setError(e.message ?? "Something went wrong. Please try again.")
+      // ✅ Signup success → go to dashboard
+      router.replace("/dashboard")
+    } catch {
+      setError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
-
-    if(!error) {
-     router.replace("/dashboard")
-
-    }
-
-
   }
 
-  const handleGithubSignup = async (): Promise<void> => {
-    try {
-      setLoading(true)
+  // 🐙 GitHub Signup (OAuth)
+  const handleGithubSignup = async () => {
+    setLoading(true)
+    setError(null)
 
+    try {
+      // ⚠️ OAuth handles redirect automatically
       await authClient.signIn.social({
         provider: "github",
+        callbackURL: "/dashboard", // ✅ IMPORTANT
       })
-    } catch (err) {
-      const e = err as AuthError
-      setError(e.message ?? "GitHub signup failed")
-    } finally {
+    } catch {
+      setError("GitHub signup failed")
       setLoading(false)
     }
   }
@@ -83,7 +72,7 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        
+
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -112,7 +101,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             />
           </div>
 
@@ -125,14 +114,14 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             />
           </div>
 
           <button
             onClick={handleEmailSignup}
             disabled={loading}
-            className="mt-2 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60 active:scale-[0.98]"
+            className="mt-2 w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
           >
             {loading ? "Creating account…" : "Create account"}
           </button>
@@ -149,7 +138,7 @@ export default function SignupPage() {
         <button
           onClick={handleGithubSignup}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-60 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-60"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 .5C5.7.5.5 5.7.5 12a11.5 11.5 0 008 11c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.4 3.6 1.1.1-.8.4-1.4.7-1.7-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.6a11.5 11.5 0 008-11C23.5 5.7 18.3.5 12 .5z" />
