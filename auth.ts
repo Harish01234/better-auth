@@ -23,6 +23,15 @@ export const auth = betterAuth({
     }, 
   },  
 
+  user:{
+  
+    additionalFields: {
+        role: {
+        type: "string",
+      },
+    }
+  },
+
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {

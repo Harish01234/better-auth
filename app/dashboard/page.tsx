@@ -4,6 +4,7 @@ import { authClient } from "@/auth-client"
 import { redirect } from "next/navigation"
 import LogoutButton from "@/components/LogoutButton"
 import EmailVerificationGate from "@/components/EmailVerificationGate"
+import { log } from "console"
 
 
 export default function DashboardPage() {
@@ -40,6 +41,8 @@ export default function DashboardPage() {
   }
 
   const { user, session } = data
+
+  console.log(user, session);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-6 py-10">
