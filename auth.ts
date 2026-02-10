@@ -5,28 +5,28 @@ import { sendMail } from "./mailer";
 
 
 export const auth = betterAuth({
-    database: new Pool({
-        connectionString: process.env.DATABASE_URL,
-        max:15
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 15
 
-    }),
-    emailAndPassword: { 
-    enabled: true, 
+  }),
+  emailAndPassword: {
+    enabled: true,
 
 
-    
-  }, 
-  socialProviders: { 
-    github: { 
-      clientId: process.env.GITHUB_CLIENT_ID as string, 
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string, 
-    }, 
-  },  
 
-  user:{
-  
+  },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+  },
+
+  user: {
+
     additionalFields: {
-        role: {
+      role: {
         type: "string",
       },
     }
@@ -46,7 +46,12 @@ export const auth = betterAuth({
           message = `Your email verification OTP is: ${otp}`;
         } else {
           subject = "Reset your password";
-          message = `Your password reset OTP is: ${otp}`;
+          message = message = `
+Your password reset OTP is: ${otp}
+
+Open this link to continue:
+${process.env.APP_URL}/set-password?email=${encodeURIComponent(email)}
+`
         }
 
         await sendMail({
@@ -55,7 +60,9 @@ export const auth = betterAuth({
           text: message,
         });
       },
+      // otpLength: 5,
+      // expiresIn: 24 * 60 * 60 * 1000,
     }),
   ],
-    
+
 })
