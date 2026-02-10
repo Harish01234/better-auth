@@ -50,7 +50,7 @@ export default function BulkEnrollmentPage() {
       setError(null)
       setSuccess(null)
 
-      const res = await fetch("/api/bulk-enroll", {
+      const res = await fetch("/api/bulk-enro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ users })
