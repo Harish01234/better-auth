@@ -7,6 +7,32 @@ datasource db {
   provider = "postgresql"
 }
 
+
+
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  BOOLEAN
+  SELECT
+  RADIO
+  CHECKBOX
+  DATE
+  FILE
+}
+
+enum QuizStatus {
+  NOT_ATTEMPTED
+  PASSED
+  FAILED
+}
+
+
+
+
+
+
 /* =========================
    LOWERCASE MODELS (KEEP)
    ========================= */
@@ -24,6 +50,9 @@ model user {
 
   account       account[]
   session       session[]
+
+  formsCreated    form[]        // If user is admin
+  submission      submission?   // 🔥 One submission per user
 }
 
 model account {
@@ -76,3 +105,113 @@ model verification {
 
   @@index([identifier])
 }
+
+
+
+
+model form {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  isActive      Boolean  @default(true)
+  version       Int      @default(1)
+
+  createdById   String
+  createdBy     user     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  fieldHeaders  fieldHeader[]
+  submissions   submission[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt      @db.Timestamptz(6)
+
+  @@index([isActive])
+  @@index([createdById])
+}
+
+
+model fieldHeader {
+  id       String @id @default(cuid())
+  title    String
+  order    Int
+
+  formId   String
+  form     form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  fields   field[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt      @db.Timestamptz(6)
+
+  @@index([formId])
+}
+
+
+model field {
+  id            String     @id @default(cuid())
+  label         String
+  placeholder   String?
+  type          FieldType
+  required      Boolean    @default(false)
+  order         Int
+
+  // Validation
+  minLength     Int?
+  maxLength     Int?
+  minValue      Float?
+  maxValue      Float?
+  regex         String?
+
+  // For SELECT / RADIO / CHECKBOX
+  options       Json?
+
+  headerId      String
+  header        fieldHeader @relation(fields: [headerId], references: [id], onDelete: Cascade)
+
+  submissionAnswers submissionAnswer[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt      @db.Timestamptz(6)
+
+  @@index([headerId])
+}
+
+
+model submission {
+  id        String @id @default(cuid())
+
+  userId    String  @unique   // 🔥 One submission per user globally
+  user      user    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  formId    String
+  form      form @relation(fields: [formId], references: [id], onDelete: Restrict)
+
+  answers   submissionAnswer[]
+
+  submittedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([formId])
+   @@index([userId])
+   @@index([submittedAt])
+
+}
+
+
+model submissionAnswer {
+  id           String  @id @default(cuid())
+
+  submissionId String
+  submission   submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  fieldId      String
+  field        field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  value        Json
+
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([submissionId])
+  @@index([fieldId])
+  
+}
+
